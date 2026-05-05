@@ -3,7 +3,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from .models import users_db
+from anyio import to_thread
+from .storage import get_user_by_username
 
 SECRET_KEY = "your-secret-key"  # In production, use a secure key
 ALGORITHM = "HS256"
@@ -12,11 +13,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+async def verify_password(plain_password, hashed_password):
+    return await to_thread.run_sync(pwd_context.verify, plain_password, hashed_password)
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+async def get_password_hash(password):
+    return await to_thread.run_sync(pwd_context.hash, password)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -28,7 +29,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -41,7 +42,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = next((u for u in users_db if u.username == username), None)
+    user = await get_user_by_username(username)
     if user is None:
         raise credentials_exception
     return user

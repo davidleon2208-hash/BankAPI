@@ -1,0 +1,10 @@
+{
+  "users": [],
+  "accounts": [],
+  "transactions": [],
+  "counters": {
+    "user": 1,
+    "account": 1,
+    "transaction": 1
+  }
+}
