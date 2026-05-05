@@ -10,6 +10,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
 
+    model_config = {"from_attributes": True}
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -24,7 +26,11 @@ class TransactionResponse(BaseModel):
     amount: float
     timestamp: datetime
 
+    model_config = {"from_attributes": True}
+
 class AccountResponse(BaseModel):
     id: int
     balance: float
     transactions: List[TransactionResponse]
+
+    model_config = {"from_attributes": True}

@@ -1,10 +1,37 @@
 {
-  "users": [],
-  "accounts": [],
-  "transactions": [],
+  "users": [
+    {
+      "id": 1,
+      "username": "testuser",
+      "password_hash": "$pbkdf2-sha256$29000$8N77fy8FICSk9N77P4fwng$KaCzHq6//1OSFzZl5z3ZHHet7WUsmQ3IAZjGwQXQqPI"
+    }
+  ],
+  "accounts": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "balance": 50.0
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1,
+      "account_id": 1,
+      "type": "deposit",
+      "amount": 100.0,
+      "timestamp": "2026-05-05T15:29:32.007432"
+    },
+    {
+      "id": 2,
+      "account_id": 1,
+      "type": "withdraw",
+      "amount": 50.0,
+      "timestamp": "2026-05-05T15:29:32.032546"
+    }
+  ],
   "counters": {
-    "user": 1,
-    "account": 1,
-    "transaction": 1
+    "user": 2,
+    "account": 2,
+    "transaction": 3
   }
 }

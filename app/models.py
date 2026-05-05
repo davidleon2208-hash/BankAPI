@@ -1,34 +1,42 @@
 from datetime import datetime
-from typing import List
+from sqlalchemy import Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-class User:
-    def __init__(self, id: int, username: str, password_hash: str):
-        self.id = id
-        self.username = username
-        self.password_hash = password_hash
-        self.accounts: List[Account] = []
+class Base(DeclarativeBase):
+    pass
 
-class Account:
-    def __init__(self, id: int, user_id: int, balance: float = 0.0):
-        self.id = id
-        self.user_id = user_id
-        self.balance = balance
-        self.transactions: List[Transaction] = []
+class User(Base):
+    __tablename__ = "users"
 
-class Transaction:
-    def __init__(self, id: int, account_id: int, type: str, amount: float):
-        self.id = id
-        self.account_id = account_id
-        self.type = type
-        self.amount = amount
-        self.timestamp = datetime.utcnow()
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String)
 
-# In-memory storage
-users_db: List[User] = []
-accounts_db: List[Account] = []
-transactions_db: List[Transaction] = []
+    accounts: Mapped[list["Account"]] = relationship("Account", back_populates="user", cascade="all, delete-orphan")
 
-# Counters for IDs
-user_id_counter = 1
-account_id_counter = 1
-transaction_id_counter = 1
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    balance: Mapped[float] = mapped_column(Float, default=0.0)
+
+    user: Mapped["User"] = relationship("User", back_populates="accounts")
+    transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    account_id: Mapped[int] = mapped_column(Integer, ForeignKey("accounts.id"))
+    type: Mapped[str] = mapped_column(String)
+    amount: Mapped[float] = mapped_column(Float)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    account: Mapped["Account"] = relationship("Account", back_populates="transactions")
+
+async def create_tables():
+    from .database import engine
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

@@ -4,7 +4,10 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from anyio import to_thread
-from .storage import get_user_by_username
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from .models import User
+from .database import get_db
 
 SECRET_KEY = "your-secret-key"  # In production, use a secure key
 ALGORITHM = "HS256"
@@ -29,7 +32,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -42,7 +45,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = await get_user_by_username(username)
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalars().first()
     if user is None:
         raise credentials_exception
     return user
